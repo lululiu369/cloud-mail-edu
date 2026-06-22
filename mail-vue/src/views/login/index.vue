@@ -143,7 +143,9 @@
     <!-- Language switcher -->
     <div class="language-switcher">
       <el-dropdown @command="handleLanguageChange">
-        <el-button circle :icon="Language" />
+        <el-button circle>
+          <Icon icon="material-symbols:language" width="20" height="20" />
+        </el-button>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="zh-CN">简体中文</el-dropdown-item>
