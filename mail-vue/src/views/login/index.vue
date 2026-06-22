@@ -172,7 +172,6 @@ import {loginUserInfo} from "@/request/my.js";
 import {permsToRouter} from "@/perm/perm.js";
 import {useI18n} from "vue-i18n";
 import {oauthBindUser, oauthLinuxDoLogin} from "@/request/ouath.js";
-import {Language} from '@element-plus/icons-vue';
 
 const {t, locale} = useI18n();
 const accountStore = useAccountStore();
