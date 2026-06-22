@@ -336,6 +336,20 @@ const zh = {
     searchUser: '搜索用户',
     searchEmail: '搜索邮箱',
     searchSender: '搜索发件人',
-    userEmail: '用户邮箱'
+    userEmail: '用户邮箱',
+    batchGenerate: '批量生成',
+    generateCount: '生成数量',
+    exportKeys: '导出密钥',
+    filterStatus: '筛选状态',
+    allStatus: '全部状态',
+    unused: '未使用',
+    used: '已使用',
+    partiallyUsed: '部分使用',
+    batchGenTitle: '批量生成注册码',
+    generateSuccess: '生成成功',
+    exportSuccess: '导出成功',
+    pleaseEnterCount: '请输入生成数量',
+    countRange: '数量范围1-1000',
+    status: '状态'
 }
 export default zh

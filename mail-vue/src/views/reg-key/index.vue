@@ -2,6 +2,8 @@
   <div class="reg-key">
     <div class="header-actions">
       <Icon class="icon" icon="ion:add-outline" width="23" height="23" @click="openAdd"/>
+      <Icon class="icon" icon="mdi:file-multiple-outline" width="23" height="23" @click="openBatchGen"/>
+      <Icon class="icon" icon="mdi:file-export-outline" width="23" height="23" @click="exportKeys"/>
       <div class="search">
         <el-input
             v-model="params.code"
@@ -10,9 +12,23 @@
         >
         </el-input>
       </div>
+      <el-select v-model="params.status" class="status-select" :placeholder="$t('filterStatus')" @change="search" clearable>
+        <el-option :label="$t('unused')" value="unused"/>
+        <el-option :label="$t('used')" value="used"/>
+        <el-option :label="$t('expired')" value="expired"/>
+      </el-select>
       <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
       <Icon class="icon" icon="ion:reload" width="18" height="18" @click="refresh"/>
       <Icon class="icon" icon="fluent:broom-sparkle-16-regular" width="22" height="22" @click="clearNotUse"/>
+    </div>
+
+    <!-- 批量操作栏 -->
+    <div class="batch-actions" v-if="selectedKeys.size > 0">
+      <span>{{ $t('selectContacts') }} <span class="selected-count">{{ selectedKeys.size }}</span> {{ $t('action') }}</span>
+      <el-button size="small" @click="selectAll">{{ $t('all') }}</el-button>
+      <el-button size="small" @click="deselectAll">{{ $t('cancel') }}</el-button>
+      <el-button size="small" @click="exportSelected">{{ $t('exportKeys') }}</el-button>
+      <el-button size="small" type="danger" @click="deleteSelected">{{ $t('delete') }}</el-button>
     </div>
 
     <el-scrollbar class="scrollbar">
@@ -20,7 +36,10 @@
         <loading/>
       </div>
       <div class="code-box">
-        <div class="code-item" v-for="item in regKeyData">
+        <div class="code-item" :class="{ 'selected': selectedKeys.has(item.regKeyId) }" v-for="item in regKeyData" :key="item.regKeyId">
+          <div class="checkbox-wrapper">
+            <el-checkbox :model-value="selectedKeys.has(item.regKeyId)" @change="toggleSelect(item)"></el-checkbox>
+          </div>
           <div class="code-info">
             <div class="info-left">
               <div class="info-left-item">
@@ -81,6 +100,23 @@
         </el-button>
       </div>
     </el-dialog>
+    <el-dialog v-model="showBatchGen" :title="$t('batchGenTitle')">
+      <div class="container">
+        <el-input-number v-model="batchForm.count" :min="1" :max="1000" :placeholder="$t('generateCount')" style="width: 100%"/>
+        <el-select v-model="batchForm.roleId" :placeholder="$t('roleDesc')">
+          <el-option v-for="item in roleList" :label="item.name" :value="item.roleId" :key="item.roleId"/>
+        </el-select>
+        <el-date-picker
+            v-model="batchForm.expireTime"
+            type="date"
+            :placeholder="$t('validUntil')"
+            style="width: 100%"
+        />
+        <el-button class="btn" type="primary" @click="submitBatch" :loading="batchLoading"
+        >{{ $t('batchGenerate') }}
+        </el-button>
+      </div>
+    </el-dialog>
     <el-dialog class="history-list" v-model="showRegKeyHistory" :title="$t('useHistory')">
       <div class="loading" :class="historyLoading ? 'loading-show' : 'loading-hide'">
         <loading/>
@@ -116,6 +152,7 @@ const roleStore = useRoleStore();
 const settingStore = useSettingStore();
 const params = reactive({
   code: '',
+  status: null
 })
 
 const {t} = useI18n()
@@ -137,6 +174,17 @@ const addForm = reactive({
   roleId: null,
   expireTime: null
 })
+
+const batchForm = reactive({
+  count: 10,
+  roleId: null,
+  expireTime: null
+})
+
+const showBatchGen = ref(false)
+const batchLoading = ref(false)
+
+const selectedKeys = reactive(new Set())
 
 const regKeyData = reactive([])
 
@@ -237,7 +285,193 @@ function formatExpireTime(expireTime) {
 
 function refresh() {
   params.code = null
+  params.status = null
   getList(true)
+}
+
+function getKeyStatus(item) {
+  const now = new Date()
+  const expireTime = new Date(item.expireTime)
+
+  if (expireTime < now) {
+    return 'expired'
+  }
+
+  if (item.count === 0) {
+    return 'used'
+  }
+
+  if (item.originalCount && item.count < item.originalCount) {
+    return 'partial'
+  }
+
+  return 'unused'
+}
+
+function openBatchGen() {
+  showBatchGen.value = true
+}
+
+function submitBatch() {
+  if (!batchForm.count || batchForm.count < 1 || batchForm.count > 1000) {
+    ElMessage({
+      message: t('countRange'),
+      type: "error",
+      plain: true
+    })
+    return
+  }
+
+  if (!batchForm.roleId) {
+    ElMessage({
+      message: t('emptyRole'),
+      type: "error",
+      plain: true
+    })
+    return
+  }
+
+  if (!batchForm.expireTime) {
+    ElMessage({
+      message: t('emptyTimeMsg'),
+      type: "error",
+      plain: true
+    })
+    return
+  }
+
+  batchLoading.value = true
+
+  // 批量生成密钥
+  const promises = []
+  for (let i = 0; i < batchForm.count; i++) {
+    const keyData = {
+      code: generateRandomCode(),
+      count: 1, // 默认只能使用一次
+      roleId: batchForm.roleId,
+      expireTime: batchForm.expireTime
+    }
+    promises.push(regKeyAdd(keyData))
+  }
+
+  Promise.all(promises).then(() => {
+    showBatchGen.value = false
+    ElMessage({
+      message: t('generateSuccess'),
+      type: "success",
+      plain: true
+    })
+    getList()
+  }).catch(() => {
+    ElMessage({
+      message: t('reqFailErrorMsg'),
+      type: "error",
+      plain: true
+    })
+  }).finally(() => {
+    batchLoading.value = false
+  })
+}
+
+function exportKeys() {
+  if (regKeyData.length === 0) {
+    ElMessage({
+      message: t('noCodeFound'),
+      type: "warning",
+      plain: true
+    })
+    return
+  }
+
+  // 生成纯文本内容，每行一个密钥
+  let textContent = regKeyData.map(item => item.code).join('\n')
+
+  // 复制到剪贴板
+  navigator.clipboard.writeText(textContent).then(() => {
+    ElMessage({
+      message: t('copySuccessMsg'),
+      type: "success",
+      plain: true
+    })
+  }).catch(() => {
+    ElMessage({
+      message: t('copyFailMsg'),
+      type: "error",
+      plain: true
+    })
+  })
+}
+
+function toggleSelect(item) {
+  if (selectedKeys.has(item.regKeyId)) {
+    selectedKeys.delete(item.regKeyId)
+  } else {
+    selectedKeys.add(item.regKeyId)
+  }
+}
+
+function selectAll() {
+  regKeyData.forEach(item => selectedKeys.add(item.regKeyId))
+}
+
+function deselectAll() {
+  selectedKeys.clear()
+}
+
+function exportSelected() {
+  if (selectedKeys.size === 0) {
+    ElMessage({
+      message: t('pleaseEnterCount'),
+      type: "warning",
+      plain: true
+    })
+    return
+  }
+
+  const selected = regKeyData.filter(item => selectedKeys.has(item.regKeyId))
+  const textContent = selected.map(item => item.code).join('\n')
+
+  navigator.clipboard.writeText(textContent).then(() => {
+    ElMessage({
+      message: t('copySuccessMsg') + ' (' + selectedKeys.size + ')',
+      type: "success",
+      plain: true
+    })
+  }).catch(() => {
+    ElMessage({
+      message: t('copyFailMsg'),
+      type: "error",
+      plain: true
+    })
+  })
+}
+
+function deleteSelected() {
+  if (selectedKeys.size === 0) {
+    ElMessage({
+      message: t('pleaseEnterCount'),
+      type: "warning",
+      plain: true
+    })
+    return
+  }
+
+  ElMessageBox.confirm(t('delConfirm', {msg: selectedKeys.size + ' ' + t('regKey')}), {
+    confirmButtonText: t('confirm'),
+    cancelButtonText: t('cancel'),
+    type: 'warning'
+  }).then(() => {
+    const ids = Array.from(selectedKeys)
+    regKeyDelete(ids).then(() => {
+      selectedKeys.clear()
+      getList()
+      ElMessage({
+        message: t('delSuccessMsg'),
+        type: "success",
+        plain: true
+      })
+    })
+  })
 }
 
 function search() {
@@ -393,6 +627,20 @@ function openAdd() {
   overflow: hidden;
 }
 
+.batch-actions {
+  padding: 10px 15px;
+  background: #ecf5ff;
+  border-bottom: 1px solid var(--el-border-color-light);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  .selected-count {
+    color: var(--el-color-primary);
+    font-weight: 500;
+  }
+}
+
 .scrollbar {
   height: calc(100% - 48px);
   position: relative;
@@ -413,9 +661,26 @@ function openAdd() {
       border: 1px solid var(--el-border-color);
       transition: all 200ms;
       padding: 15px;
+      position: relative;
+
+      &:hover {
+        box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      }
+
+      &.selected {
+        border-color: var(--primary-color, #409eff);
+        background: #ecf5ff;
+      }
+
+      .checkbox-wrapper {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+      }
 
       .code-info {
         display: flex;
+        padding-left: 30px;
 
         .info-left {
           flex: 1;
@@ -545,6 +810,13 @@ function openAdd() {
 
   .search-input {
     width: min(200px, calc(100vw - 140px));
+  }
+
+  .status-select {
+    width: 120px;
+    :deep(.el-input__inner) {
+      height: 28px;
+    }
   }
 
   .search {

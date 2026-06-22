@@ -336,7 +336,21 @@ const en = {
     searchUser: 'Search by user',
     searchEmail: 'Search by Email',
     searchSender: 'Search by Sender',
-    userEmail: 'Email Address'
+    userEmail: 'Email Address',
+    batchGenerate: 'Batch Generate',
+    generateCount: 'Generate Count',
+    exportKeys: 'Export Keys',
+    filterStatus: 'Filter Status',
+    allStatus: 'All Status',
+    unused: 'Unused',
+    used: 'Used',
+    partiallyUsed: 'Partially Used',
+    batchGenTitle: 'Batch Generate Keys',
+    generateSuccess: 'Generated Successfully',
+    exportSuccess: 'Exported Successfully',
+    pleaseEnterCount: 'Please enter count',
+    countRange: 'Count range: 1-1000',
+    status: 'Status'
 }
 
 export default en
