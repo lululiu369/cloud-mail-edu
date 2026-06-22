@@ -140,9 +140,18 @@
         </el-button>
       </div>
     </el-dialog>
-    <a v-show="settingStore.settings.projectLink" class="github" href="https://github.com/maillab/cloud-mail">
-      <Icon icon="mingcute:github-line" color="#1890ff" width="20" height="20" />
-    </a>
+    <!-- Language switcher -->
+    <div class="language-switcher">
+      <el-dropdown @command="handleLanguageChange">
+        <el-button circle :icon="Language" />
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="zh-CN">简体中文</el-dropdown-item>
+            <el-dropdown-item command="en">English</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </div>
   </div>
 </template>
 
@@ -163,8 +172,9 @@ import {loginUserInfo} from "@/request/my.js";
 import {permsToRouter} from "@/perm/perm.js";
 import {useI18n} from "vue-i18n";
 import {oauthBindUser, oauthLinuxDoLogin} from "@/request/ouath.js";
+import {Language} from '@element-plus/icons-vue';
 
-const {t} = useI18n();
+const {t, locale} = useI18n();
 const accountStore = useAccountStore();
 const userStore = useUserStore();
 const uiStore = useUiStore();
@@ -575,6 +585,16 @@ function submitRegister() {
   });
 }
 
+function handleLanguageChange(lang) {
+  locale.value = lang;
+  localStorage.setItem('language', lang);
+  ElMessage({
+    message: lang === 'zh-CN' ? '切换到简体中文' : 'Switched to English',
+    type: 'success',
+    plain: true,
+  });
+}
+
 </script>
 
 
@@ -600,81 +620,105 @@ function submitRegister() {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 40px;
   @media (max-width: 767px) {
     width: 100%;
+    padding: 20px;
   }
 }
 
 .container {
   background: v-bind(loginOpacity);
-  padding-left: 40px;
-  padding-right: 40px;
+  backdrop-filter: blur(10px);
+  padding: 48px 40px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  width: 450px;
-  height: 100%;
-  border-left: 1px solid var(--login-border);
-  box-shadow: var(--el-box-shadow-light);
+  width: 420px;
+  border-radius: 16px;
+  border: 1px solid var(--login-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   @media (max-width: 1024px) {
-    padding: 20px 18px;
+    padding: 40px 32px;
     width: 384px;
-    margin-left: 18px;
   }
   @media (max-width: 767px) {
-    border: 1px solid var(--login-border);
-    padding: 20px 18px;
-    border-radius: 6px;
-    height: fit-content;
+    padding: 32px 24px;
     width: 100%;
-    margin-right: 18px;
-    margin-left: 18px;
+    max-width: 420px;
   }
 
   .btn {
-    height: 36px;
+    height: 42px;
     width: 100%;
-    border-radius: 6px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+    }
   }
 
   .form-desc {
-    margin-top: 5px;
-    margin-bottom: 18px;
+    margin-top: 8px;
+    margin-bottom: 24px;
     color: var(--form-desc-color);
+    font-size: 14px;
   }
 
   .form-title {
-    font-weight: bold;
-    font-size: 22px !important;
+    font-weight: 600;
+    font-size: 28px !important;
+    letter-spacing: -0.5px;
   }
 
   .switch {
-    margin-top: 20px;
+    margin-top: 24px;
     text-align: center;
+    font-size: 14px;
 
     span {
       color: var(--login-switch-color);
       cursor: pointer;
+      font-weight: 500;
+
+      &:hover {
+        text-decoration: underline;
+      }
     }
   }
 
   :deep(.el-input__wrapper) {
-    border-radius: 6px;
+    border-radius: 8px;
     background: var(--el-bg-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+
+    &.is-focus {
+      box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+    }
   }
 
   .email-input :deep(.el-input__wrapper) {
-    border-radius: 6px 0 0 6px;
+    border-radius: 8px 0 0 8px;
     background: var(--el-bg-color);
   }
 
   .el-input {
-    height: 38px;
+    height: 42px;
     width: 100%;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
 
     :deep(.el-input__inner) {
-      height: 36px;
+      height: 40px;
+      font-size: 15px;
     }
   }
 }
@@ -684,18 +728,38 @@ function submitRegister() {
 }
 
 :deep(.bind-dialog) {
-  width: 400px !important;
+  width: 420px !important;
+  border-radius: 16px;
   @media (max-width: 440px) {
     width: calc(100% - 40px) !important;
     margin-right: 20px !important;
     margin-left: 20px !important;
+  }
+
+  .el-dialog__header {
+    padding: 24px 24px 16px;
+  }
+
+  .el-dialog__body {
+    padding: 16px 24px 24px;
   }
 }
 
 .bind-container {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 15px;
+  gap: 20px;
+
+  .el-input {
+    height: 42px;
+    margin-bottom: 0;
+  }
+
+  .btn {
+    height: 42px;
+    border-radius: 8px;
+    font-weight: 500;
+  }
 }
 
 .setting-icon {
@@ -720,12 +784,35 @@ function submitRegister() {
   cursor: pointer;
 }
 
+.language-switcher {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+
+  :deep(.el-button) {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color-light);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+  }
+}
+
 :deep(.el-input-group__append) {
   padding: 0 !important;
   padding-left: 8px !important;
-  padding-right: 4px !important;
+  padding-right: 8px !important;
   background: var(--el-bg-color);
   border-radius: 0 8px 8px 0;
+  cursor: pointer;
 }
 
 :deep(.el-button+.el-button) {
@@ -733,7 +820,10 @@ function submitRegister() {
 }
 
 .register-turnstile {
-  margin-bottom: 18px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
 }
 
 .select {
