@@ -195,8 +195,10 @@ function setBatchFormDefaults() {
     batchForm.roleId = roleList[0].roleId
   }
 
-  // 设置默认有效期到2026年12月31日
-  batchForm.expireTime = new Date('2026-12-31T23:59:59')
+  // 设置默认有效期为6个月后
+  const sixMonthsLater = new Date()
+  sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
+  batchForm.expireTime = sixMonthsLater
 }
 
 // 设置单个生成的默认值
@@ -212,8 +214,10 @@ function setAddFormDefaults() {
     addForm.roleId = roleList[0].roleId
   }
 
-  // 设置默认有效期到2026年12月31日
-  addForm.expireTime = new Date('2026-12-31T23:59:59')
+  // 设置默认有效期为6个月后
+  const sixMonthsLater = new Date()
+  sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
+  addForm.expireTime = sixMonthsLater
 }
 
 const showBatchGen = ref(false)
