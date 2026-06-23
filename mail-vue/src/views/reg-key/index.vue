@@ -181,6 +181,41 @@ const batchForm = reactive({
   expireTime: null
 })
 
+// 设置批量生成的默认值
+function setBatchFormDefaults() {
+  // 查找普通用户角色
+  const normalUserRole = roleList.find(role =>
+    role.name === '普通用户' || role.name === 'Normal User' || role.name.toLowerCase().includes('normal')
+  )
+
+  if (normalUserRole) {
+    batchForm.roleId = normalUserRole.roleId
+  } else if (roleList.length > 0) {
+    // 如果没找到普通用户，使用第一个角色
+    batchForm.roleId = roleList[0].roleId
+  }
+
+  // 设置默认有效期到2026年12月31日
+  batchForm.expireTime = new Date('2026-12-31T23:59:59')
+}
+
+// 设置单个生成的默认值
+function setAddFormDefaults() {
+  // 查找普通用户角色
+  const normalUserRole = roleList.find(role =>
+    role.name === '普通用户' || role.name === 'Normal User' || role.name.toLowerCase().includes('normal')
+  )
+
+  if (normalUserRole) {
+    addForm.roleId = normalUserRole.roleId
+  } else if (roleList.length > 0) {
+    addForm.roleId = roleList[0].roleId
+  }
+
+  // 设置默认有效期到2026年12月31日
+  addForm.expireTime = new Date('2026-12-31T23:59:59')
+}
+
 const showBatchGen = ref(false)
 const batchLoading = ref(false)
 
@@ -193,6 +228,7 @@ getList(true)
 roleSelectUse().then(list => {
   roleList.length = 0
   roleList.push(...list)
+  setBatchFormDefaults()
 })
 
 watch(() => roleStore.refresh, () => {
@@ -309,6 +345,7 @@ function getKeyStatus(item) {
 }
 
 function openBatchGen() {
+  setBatchFormDefaults()
   showBatchGen.value = true
 }
 
@@ -616,6 +653,7 @@ function resetForm() {
 
 function openAdd() {
   genCode()
+  setAddFormDefaults()
   showAdd.value = true
 }
 
